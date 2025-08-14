@@ -203,7 +203,7 @@ export const Content = () => {
           {users.map((user) => (
             <button key={user.id} className="flex items-center gap-4 p-4 rounded-4xl bg-blue-950 shadow-md hover:scale-105 transition-transform duration-300 cursor-pointer" onClick={() => handleClickUser(user)}>
               <Avatar>{user.name.charAt(0)}</Avatar>
-              <span>
+              <span className="w-1/2">
                 <h4 title={user.name} className="text-xl font-bold text-left text-ellipsis line-clamp-1">{user.name}</h4>
                 <p title={user.email} className="text-sm text-gray-500 text-left font-bold text-ellipsis line-clamp-1">{user.email}</p>
               </span>
@@ -234,7 +234,7 @@ export const Content = () => {
           </header>
           <Divider className="border-white!" />
           <section className="flex flex-col gap-4 h-full">
-            <div className="flex flex-col gap-4 p-2 h-1/2">
+            <div className="flex flex-col gap-4 p-2 h-1/2 overflow-y-auto">
               {isLoadingFunds && <Loader />}
               {funds.length > 0 && funds.map((fund) => (
                 <button key={fund.id} className={`flex items-center gap-4 p-4 rounded-4xl shadow-md cursor-pointer bg-blue-950 ${fund.id === selectedFund?.id ? "border-gray-500 border-2" : ""}`} onClick={() => handleClickFund(fund)}>
