@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Despliegue de funds-front (Next.js) en AWS EC2 usando npm start con systemd
+
+Resources:
+  FundsFrontInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.micro
+      ImageId: ami-020cba7c55df1f615
+      KeyName: funds-app-key
+      SecurityGroupIds:
+        - !Ref FundsFrontSecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -eux
+
+          # Actualizar e instalar dependencias base
+          apt-get update -y
+          apt-get install -y git curl
+
+          # Instalar Node.js 20 (NodeSource)
+          curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+          apt-get install -y nodejs
+
+          # Clonar el repo del FRONT
+          git clone https://github.com/Sogrub/funds-front.git /home/ubuntu/funds-front
+          chown -R ubuntu:ubuntu /home/ubuntu/funds-front
+          cd /home/ubuntu/funds-front
+
+          # Instalar dependencias
+          sudo -u ubuntu npm install
+
+          # Variables de entorno
+          cat <<EOF >/home/ubuntu/funds-front/.env
+          NEXT_PUBLIC_SERVER=http://54.210.220.164:8000
+          EOF
+          chown ubuntu:ubuntu /home/ubuntu/funds-front/.env
+
+          # Build de producci?n (SSR)
+          sudo -u ubuntu npm run build
+
+          # Crear servicio systemd para Next.js
+          cat <<EOT > /etc/systemd/system/fundsfront.service
+          [Unit]
+          Description=Funds Front (Next.js) SSR site
+          After=network.target
+
+          [Service]
+          Type=simple
+          User=ubuntu
+          WorkingDirectory=/home/ubuntu/funds-front
+          Environment=NODE_ENV=production
+          ExecStart=/usr/bin/npm start -- -p 3000
+          Restart=always
+          RestartSec=5
+
+          [Install]
+          WantedBy=multi-user.target
+          EOT
+
+          # Recargar systemd, habilitar e iniciar el servicio
+          systemctl daemon-reload
+          systemctl enable fundsfront
+          systemctl start fundsfront
+
+  FundsFrontSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Permitir HTTP, HTTPS y SSH para funds-front
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 8000
+          ToPort: 8000
+          CidrIp: 0.0.0.0/0
