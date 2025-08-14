@@ -1,36 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Funds Front - Deployment on AWS with CloudFormation
 
-## Getting Started
+This repository contains the **AWS CloudFormation template** to deploy the `funds-front` application (Next.js) on an EC2 instance using **SSR (Server-Side Rendering)** with `npm start` and **systemd** for automatic service management.
 
-First, run the development server:
+It also provides a **step-by-step guide** to manually deploy the infrastructure using the AWS console.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Prerequisites
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Before deploying, make sure you have:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- An active AWS account.
+- A Key Pair in your chosen AWS region (to access the EC2 instance via SSH).
+- Internet connection and sufficient permissions to create EC2 instances, Security Groups, and CloudFormation stacks.
+- Optional: AWS CLI configured if you prefer to deploy via command line.
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## Manual Deployment Steps
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **Access CloudFormation**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   - Go to the [AWS Console](https://aws.amazon.com/console/).
+   - Search for **CloudFormation** and click **Create stack** → **With new resources (standard)**.
 
-## Deploy on Vercel
+2. **Upload the Template**
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   - Select **Upload a template file**.
+   - Click **Choose file** and select `cloudformation.yaml` from this repository.
+   - Click **Next**.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+3. **Configure the Stack**
+
+   - Enter a name for your stack, e.g., `funds-front-stack`.
+   - Fill in any required template parameters:
+     - `KeyName`: your AWS Key Pair.
+   - Click **Next**.
+
+4. **Configure Additional Options (Optional)**
+
+   - Add tags, permissions, or policies if needed.
+   - Click **Next**.
+
+5. **Review and Create Stack**
+
+   - Review all details and make sure everything is correct.
+   - Check the acknowledgment box if necessary (**I acknowledge that AWS CloudFormation might create IAM resources**).
+   - Click **Create stack**.
+
+6. **Wait for Stack Creation**
+
+   - CloudFormation will start creating resources.  
+   - Monitor progress in the **Events** tab.  
+   - Once the status changes to **CREATE_COMPLETE**, your infrastructure is ready.
+
+7. **Access the Application**
+
+   - Obtain the **public IP** of the EC2 instance (from the Outputs tab or EC2 console).  
+   - Open a browser and navigate to:
+
+     ```
+     http://<EC2_PUBLIC_IP>:3000
+     ```
+
+   - The Next.js app should now be live.
+
+---
+
+## Security and Best Practices
+
+- **Do not commit secrets** to the repository.  
+- Configure the **Security Group** to restrict access in production if necessary.
+- Check the systemd service logs on the EC2 instance:
+
+  ```bash
+  sudo journalctl -u fundsfront -f
+  ```
+  
+### To stop the service:
+  ```bash
+  sudo systemctl stop fundsapp
+  ```
+
+### To restart the service:
+  ```bash
+  sudo systemctl restart fundsapp
+  ```
